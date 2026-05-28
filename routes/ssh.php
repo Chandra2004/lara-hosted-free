@@ -156,19 +156,28 @@ Route::middleware(['web'])->group(function () use ($sshPath) {
                 }
                 
                 if ($isArtisan) {
-                    // Tambahkan --force otomatis pada perintah yang membutuhkannya
-                    if (str_starts_with($artisanCmd, 'migrate') && !str_contains($artisanCmd, '--force')) {
-                        $artisanCmd .= ' --force';
-                    }
-
-                    // Tambahkan --no-ansi agar output bersih dari color code
-                    if (!str_contains($artisanCmd, '--no-ansi') && !str_contains($artisanCmd, '--ansi')) {
-                        $artisanCmd .= ' --no-ansi';
-                    }
+                    $artisanCmd = trim($artisanCmd);
                     
-                    // Eksekusi via Laravel Internal Artisan (Cepat & Stabil)
-                    Artisan::call($artisanCmd);
-                    $output = Artisan::output();
+                    if ($artisanCmd === '' || $artisanCmd === 'list') {
+                        Artisan::call('list');
+                        $output = Artisan::output();
+                    } elseif ($artisanCmd === '--version' || $artisanCmd === '-V') {
+                        $output = "Laravel Framework " . app()->version();
+                    } else {
+                        // Tambahkan --force otomatis pada perintah yang membutuhkannya
+                        if (str_starts_with($artisanCmd, 'migrate') && !str_contains($artisanCmd, '--force')) {
+                            $artisanCmd .= ' --force';
+                        }
+
+                        // Tambahkan --no-ansi agar output bersih dari color code
+                        if (!str_contains($artisanCmd, '--no-ansi') && !str_contains($artisanCmd, '--ansi')) {
+                            $artisanCmd .= ' --no-ansi';
+                        }
+                        
+                        // Eksekusi via Laravel Internal Artisan (Cepat & Stabil)
+                        Artisan::call($artisanCmd);
+                        $output = Artisan::output();
+                    }
                 } else {
                     // Eksekusi sebagai System Command menggunakan Symfony Process (lebih aman, asinkron, bebas deadlock)
                     try {
@@ -183,7 +192,18 @@ Route::middleware(['web'])->group(function () use ($sshPath) {
                         }
                     } catch (\Throwable $e) {
                         if (str_contains(strtolower($e->getMessage()), 'proc_open')) {
-                            $output = "Gagal mengeksekusi perintah sistem. Fungsi 'proc_open' dinonaktifkan (disable_functions) di php.ini hosting Anda.";
+                            // Fallback untuk basic commands jika proc_open didisable
+                            $baseCmd = strtolower(explode(' ', trim($cmd))[0]);
+                            if ($baseCmd === 'ls' || $baseCmd === 'dir') {
+                                $files = scandir($cwd);
+                                $output = implode("\n", $files);
+                            } elseif ($baseCmd === 'pwd') {
+                                $output = $cwd;
+                            } elseif ($baseCmd === 'php' && (str_contains($cmd, '-v') || str_contains($cmd, '--version'))) {
+                                $output = "PHP " . phpversion();
+                            } else {
+                                $output = "Gagal mengeksekusi perintah sistem. Fungsi 'proc_open' dinonaktifkan (disable_functions) di php.ini hosting Anda.\n\n(Hanya perintah Artisan atau fallback perintah dasar seperti 'ls', 'dir', 'pwd', 'php -v' yang bisa berjalan)";
+                            }
                         } else {
                             $output = "Gagal mengeksekusi perintah: " . $e->getMessage();
                         }
