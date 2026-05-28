@@ -34,7 +34,7 @@ class LaraHostedFreeServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Publish config file
+        // Publish config file & register console commands
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../../config/lara-hosted-free.php' => config_path('lara-hosted-free.php'),
@@ -45,7 +45,7 @@ class LaraHostedFreeServiceProvider extends ServiceProvider
             ], 'lara-hosted-htaccess');
         }
 
-        // Always register commands so they can be called via Artisan::call() from Web SSH
+        // Register commands outside so it can be called via web
         $this->commands([
             \Chanzz\LaraHostedFree\Console\Commands\AppClean::class,
         ]);
