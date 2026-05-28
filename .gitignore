@@ -1,0 +1,16 @@
+# Composer
+/vendor
+composer.lock
+
+# Laravel local storage/cache (jika ada)
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*.log
+!.gitignore
+
+# IDE / OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
