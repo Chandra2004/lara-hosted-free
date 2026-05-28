@@ -153,6 +153,9 @@ Route::middleware(['web'])->group(function () use ($sshPath) {
                 } elseif (str_starts_with($cmd, 'artisan ')) {
                     $isArtisan = true;
                     $artisanCmd = substr($cmd, 8);
+                } elseif (str_starts_with($cmd, 'app:clean')) {
+                    $isArtisan = true;
+                    $artisanCmd = $cmd;
                 }
                 
                 if ($isArtisan) {
@@ -174,9 +177,13 @@ Route::middleware(['web'])->group(function () use ($sshPath) {
                             $artisanCmd .= ' --no-ansi';
                         }
                         
-                        // Eksekusi via Laravel Internal Artisan (Cepat & Stabil)
+                        // Gunakan Output Buffering untuk menangkap direct echo & Artisan Buffer
+                        ob_start();
                         Artisan::call($artisanCmd);
-                        $output = Artisan::output();
+                        $echoOutput = ob_get_clean();
+                        $artisanOutput = Artisan::output();
+                        
+                        $output = trim($echoOutput . "\n" . $artisanOutput);
                     }
                 } else {
                     // Eksekusi sebagai System Command menggunakan Symfony Process (lebih aman, asinkron, bebas deadlock)

@@ -70,6 +70,7 @@
     artisan route:list      — Lihat daftar route
     app:clean               — Bersihkan cache & storage
     app:clean --dry-run     — Preview pembersihan
+    app:clean --force       — Paksa bersihkan tanpa konfirmasi
 
   Perintah Sistem:
     ls / dir                — Lihat isi direktori
