@@ -83,34 +83,103 @@ Ini akan menyalin file `.htaccess` ke root project Anda untuk mengarahkan semua 
 
 ### 3. Setup Environment Variables (`.env`)
 
-Untuk deployment di server hosting (produksi), sangat disarankan untuk mengatur variabel environment secara eksplisit di file `.env`. 
+Untuk mendeploy aplikasi Laravel Anda di server hosting (shared hosting / free hosting seperti InfinityFree, dll.), pengaturan file `.env` yang tepat sangat krusial untuk menjamin **Keamanan, Stabilitas, dan Resiliensi**.
 
-#### 📋 Variabel Wajib untuk Keamanan Produksi
-Anda **wajib** menambahkan baris berikut ke `.env` server hosting Anda demi keamanan:
+Berikut adalah daftar lengkap seluruh variabel `.env` yang **penting, wajib, dan direkomendasikan** untuk dimasukkan ke server:
+
+---
+
+#### A. Variabel Inti Laravel (Core Laravel Settings)
+Variabel ini wajib diatur ke mode **Produksi** untuk menjaga performa dan keamanan website Anda:
 
 ```env
-# ============================================================
-# Lara Hosted Free — Admin Tools Settings
-# ============================================================
+# Nama aplikasi Anda (bungkus dengan tanda kutip jika terdapat spasi)
+APP_NAME="Web Saya"
 
-# Aktifkan/nonaktifkan Web SSH & Log Viewer (true/false)
+# WAJIB diatur ke production saat online di server hosting
+APP_ENV=production
+
+# Key enkripsi utama (Gunakan perintah php artisan key:generate di lokal lalu salin ke server)
+APP_KEY=base64:lmhIQSuNJD357QdmLfy80eHLq2213fyWPO+1rkEWSPo=
+
+# WAJIB diatur ke false agar stack trace/detail error coding & database tidak bocor ke publik
+APP_DEBUG=false
+
+# URL website asli Anda di server hosting (wajib HTTPS jika didukung SSL)
+APP_URL=https://tes-lara.rf.gd
+
+# Bahasa default aplikasi
+APP_LOCALE=id
+APP_FALLBACK_LOCALE=en
+```
+
+---
+
+#### B. Variabel Database Hosting (Database Settings)
+Sesuaikan dengan detail database MySQL yang diberikan oleh panel hosting Anda (misal cPanel / vPanel):
+
+```env
+# Driver database yang digunakan
+DB_CONNECTION=mysql
+
+# Host database hosting (biasanya diberikan host eksternal oleh penyedia free hosting)
+DB_HOST=sql202.infinityfree.com
+DB_PORT=3306
+
+# Nama database, username, dan password dari panel hosting Anda
+DB_DATABASE=if0_41782741_tes_lara
+DB_USERNAME=if0_41782741
+DB_PASSWORD=L32Uk9hOV0wBFv
+```
+
+---
+
+#### C. Sesi, Cache, Antrean & Log (Sangat Stabil untuk Shared Hosting)
+Untuk performa optimal di shared hosting yang memiliki limit memori ketat, gunakan driver berbasis **file** dan batasi level pencatatan log:
+
+```env
+# Direkomendasikan menggunakan file agar session tetap aktif meskipun database sedang down
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+# Wajib menggunakan file agar fitur resiliensi IP Lockout Web SSH tetap bekerja saat database offline
+CACHE_STORE=file
+
+# Antrean & Disk penyimpanan lokal
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+
+# Pengaturan Log Harian (daily) mencegah memory hosting penuh karena file log di-rotate otomatis setiap hari
+LOG_CHANNEL=daily
+LOG_LEVEL=error
+```
+
+---
+
+#### D. Variabel Keamanan & Modifikasi Web Artisan (Lara Hosted Free Settings)
+Variabel khusus untuk mengaktifkan dan mengamankan terminal Web SSH Anda. **Ganti nilai default ini untuk mencegah terdeteksi bot otomatis:**
+
+```env
+# Aktifkan/nonaktifkan Web SSH & Log Viewer secara global (true/false)
 WEB_CONFIG=true
 
-# Kredensial Admin Utama (PASSWORD HARUS HASH BCRYPT!)
-# GANTI default username & password ini segera setelah instalasi!
-USERNAME_ADMIN="admin_super_kamu"
-PASSWORD_ADMIN='$2y$12$HASH_BCRYPT_MILIK_ANDA_DISINI'
+# Username khusus untuk login ke panel admin Web SSH
+USERNAME_ADMIN=admin
 
-# Path folder public (sesuaikan dengan hosting Anda, misal: public_html, htdocs)
+# Password admin dalam bentuk bcrypt hash (BUKAN plain text!)
+# Default di bawah adalah hash dari password: secret123
+PASSWORD_ADMIN='$2y$12$fx61lAuR2mpQZMtJ84WA3OnG/zgBVEIJho6C7Fcc8AKr8NnFz68pa'
+
+# Folder public di hosting Anda (misal: public_html, htdocs, public, dll.)
 PUBLIC_PATH=public
 
-# URL Paths Kustom — WAJIB GANTI agar tidak terdeteksi bot scanner otomatis!
-SSH_PATH_WEB="ops-terminal-xyz99"
-LOG_PATH_WEB="log-viewer-abc77"
-LOGIN_PATH_WEB="secure-gate-pqr55"
+# URL Paths — GANTI ke kata rahasia acak Anda agar tidak mudah dipindai oleh scanner bot!
+SSH_PATH_WEB="admin-ssh"      # Akses terminal: https://domain.com/admin-ssh
+LOG_PATH_WEB="admin-log"      # Akses log: https://domain.com/admin-log
+LOGIN_PATH_WEB="admin-login"  # Gate login: https://domain.com/admin-login
 
-# Batasan Login & Sesi
-MAX_LOGIN_ATTEMPTS=5           # Jumlah percobaan login salah sebelum IP dikunci
+# Batasan Keamanan Brute-force
+MAX_LOGIN_ATTEMPTS=5           # Batas salah password sebelum IP dikunci
 LOCKOUT_MINUTES=15             # Durasi penguncian IP (menit)
 SESSION_TIMEOUT_MINUTES=30     # Auto-logout jika tidak ada aktivitas (menit)
 ```
